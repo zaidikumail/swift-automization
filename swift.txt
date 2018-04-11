@@ -1,0 +1,3 @@
+/home/kumail/astrosoft/00031224006
+/home/kumail/astrosoft/00031224006/xrt/event
+
