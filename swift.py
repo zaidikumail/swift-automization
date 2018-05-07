@@ -4,7 +4,7 @@
 #	swift.py
 #
 # PURPOSE:
-#	To automate the processing (post level-1) of the observational data collected from the Swift XRT satellite
+#	To automate the processing (post level 1) of the observational data collected from the Swift XRT
 #
 # EXPLANATION:
 #		 
@@ -90,7 +90,10 @@ print('steminputs: ' + steminputs)
 outdir = obsdir_reduced  + obsid + '-xrt'
 print('outdir: ' + outdir)
 
-xrt = 'xrtpipeline indir=' + indir + ' steminputs=' + steminputs + ' outdir=' + outdir + ' srcra=' + 'OBJECT' + ' srcdec=' + 'OBJECT' + ' createexpomap=yes useexpomap=yes plotdevice="ps" correctlc=yes  clobber=yes cleanup=no'
+#name of the file where the log of xrtpipeline is recorded
+xrtlog = 'xrt_' + obsid + '.log'
+
+xrt = 'xrtpipeline indir=' + indir + ' steminputs=' + steminputs + ' outdir=' + outdir + ' srcra=' + 'OBJECT' + ' srcdec=' + 'OBJECT' + ' createexpomap=yes useexpomap=yes plotdevice="ps" correctlc=yes  clobber=yes cleanup=no > ' + xrtlog
 print('Running pipeline command: ' + xrt)
 
 
@@ -150,6 +153,34 @@ if obmode == 'pc':
 	back_down = open(backd, 'w')
 	back_down.write('CIRCLE (' + str(srcx) + ',' + str(srcyd) + ',20)')
 	back_down.close()
+	xsel_PC = 'xsel' + obsid + '_PCback.xco'
+	xsel_pcback = open(xsel_PC, 'w')
+	xsel_pcback.write('xsel' + obsid + '\nno\n')
+	xsel_pcback.write('read e'+ '\n')
+	xsel_pcback.write(outdir + '\n')
+	xsel_pcback.write(xrt_evtfile + '\n' + 'yes' + '\n')
+	xsel_pcback.write('filter region ' + backr + '\nextract spectrum\nyes\n')
+	xsel_pcback.write('clear region\nfilter region ' + backl + '\nextract spectrum\nyes\n')
+	xsel_pcback.write('clear region\nfilter region ' + backu + '\nextract spectrum\nyes\n')
+	xsel_pcback.write('clear region\nfilter region ' + backd + '\nextract spectrum\nyes\n')
+	xsel_pcback.write('$cd\n')
+	xsel_pcback.write('no\nquit\nyes')
+	xsel_pcback.close()
+	os.system('xselect @' + xsel_PC)
+	back_xpec = []
+	counts = []
+	back_pcreg = open('xselect.log','r')
+	for line in back_pcreg.readlines():
+        	if (re.search('Spectrum         has', line, re.M|re.I)):
+                	back_xpec.append(line)
+	back_pcreg.close()
+	for item in back_xpec:
+		item = item[25:item.find('coun')]
+		item = str(item).strip()
+	item = int(item)
+	counts.append(item)
+	min_ = min(counts)
+	pc_backindex = counts.index(min_)
 #region manipulation for WT
 elif obmode == 'wt':
 	back = 'sw' + obsid + 'back.reg'
@@ -160,27 +191,35 @@ elif obmode == 'wt':
 #Writing the .xco file for XSELECT to read the commands from
 print('Event file directory:' + outdir)	#see outdir above
 
-
 xsel_filename = 'xsel' + obsid + '.xco'
 xsel_file = open(xsel_filename, 'w')
-xsel_file.write('xsel' + obsid + '\n')
+xsel_file.write('xsel' + obsid + '\nno\n')
 xsel_file.write('read e'+ '\n')
 xsel_file.write(outdir + '\n')
 
 #adding further things to the .xco file
-xsel_file.write(xrt_evtfile + '\n' + 'yes' + '\n' + 'extract all' + '\n')
+xsel_file.write(xrt_evtfile + '\n' + 'yes' + '\n')
 xsel_file.write('filter region ' + regfile + '\nextract spectrum\nsave spectrum sw' + obsid + '_spectrum.pi\nyes\nclear region\n')
 if obmode == 'pc':
-	xsel_file.write('filter region ' + backr + '\nextract spectrum\nsave spectrum sw' + obsid + 'back_right_spectrum.pi\nyes\n')
-	xsel_file.write('clear region\nfilter region ' + backl + '\nextract spectrum\nsave spectrum sw' + obsid + 'back_left_spectrum.pi\nyes\n')
-	xsel_file.write('clear region\nfilter region ' + backu + '\nextract spectrum\nsave spectrum sw' + obsid + 'back_up_spectrum.pi\nyes\n')
-	xsel_file.write('clear region\nfilter region ' + backd + '\nextract spectrum\nsave spectrum sw' + obsid + 'back_down_spectrum.pi\nyes\n')
+	if pc_backindex == 0:
+		xsel_file.write('filter region ' + backr + '\nextract spectrum\nsave spectrum sw' + obsid + 'back_min_spectrum.pi\nyes\n')
+	elif pc_backindex == 1:	
+		xsel_file.write('clear region\nfilter region ' + backl + '\nextract spectrum\nsave spectrum sw' + obsid + 'back_min_spectrum.pi\nyes\n')
+	elif pc_backindex == 2:	
+		xsel_file.write('clear region\nfilter region ' + backu + '\nextract spectrum\nsave spectrum sw' + obsid + 'back_min_spectrum.pi\nyes\n')
+	elif pc_backindex == 3:
+		xsel_file.write('clear region\nfilter region ' + backd + '\nextract spectrum\nsave spectrum sw' + obsid + 'back_min_spectrum.pi\nyes\n')
 elif obmode == 'wt':
 	xsel_file.write('filter region ' + back + '\nextract spectrum\nsave spectrum sw' + obsid + 'back_annulus_spectrum.pi\nyes\n')
 xsel_file.write('$cd\n')
 xsel_file.write('no\nquit\nno')
 
 xsel_file.close()
+xsel = subprocess.Popen( "xselect @" + xsel_filename, stdout=subprocess.PIPE, shell=True)
+(xs, err) = xsel.communicate()
+xsele = open('backg.txt','w')
+xsele.write(str(xs))
+xsele.close()
 os.system('xselect @' + xsel_filename)
 
 #changing back to starting working directory
