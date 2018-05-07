@@ -97,7 +97,7 @@ xrt = 'xrtpipeline indir=' + indir + ' steminputs=' + steminputs + ' outdir=' + 
 print('Running pipeline command: ' + xrt)
 
 
-#os.system(xrt)
+os.system(xrt)
 
 #######################################################################     XSELECT      ################################################################################
 
@@ -213,13 +213,8 @@ elif obmode == 'wt':
 	xsel_file.write('filter region ' + back + '\nextract spectrum\nsave spectrum sw' + obsid + 'back_annulus_spectrum.pi\nyes\n')
 xsel_file.write('$cd\n')
 xsel_file.write('no\nquit\nno')
-
 xsel_file.close()
-xsel = subprocess.Popen( "xselect @" + xsel_filename, stdout=subprocess.PIPE, shell=True)
-(xs, err) = xsel.communicate()
-xsele = open('backg.txt','w')
-xsele.write(str(xs))
-xsele.close()
+
 os.system('xselect @' + xsel_filename)
 
 #changing back to starting working directory
