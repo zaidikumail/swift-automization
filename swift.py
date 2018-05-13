@@ -90,6 +90,7 @@ print('steminputs: ' + steminputs)
 outdir = obsdir_reduced  + obsid + '-xrt'
 print('outdir: ' + outdir)
 
+
 #name of the file where the log of xrtpipeline is recorded
 xrtlog = 'xrt_' + obsid + '.log'
 
@@ -97,12 +98,25 @@ xrt = 'xrtpipeline indir=' + indir + ' steminputs=' + steminputs + ' outdir=' + 
 print('Running pipeline command: ' + xrt)
 
 
-os.system(xrt)
+#os.system(xrt)
 
 #######################################################################     XSELECT      ################################################################################
 
 #changing to outdir directory for xselect work
 os.chdir(outdir)
+
+#(NOT A PART OF XSELECT) finding the rmf file in CALDB and copying it to the outdir
+p = subprocess.Popen( "quzcif SWIFT XRT - - matrix NOW - datamode.eq.windowed.and.grade.eq.G0:2.and.XRTVSUB.eq.6", stdout=subprocess.PIPE, shell=True)
+(quzcif_output, err) = p.communicate()
+p_status = p.wait()
+quzcif = str(quzcif_output)
+quzcif = quzcif.strip("b' 1\n")
+quzcif = quzcif[:-3]
+quzcif = quzcif.strip()
+os.system('cp '+  quzcif + ' ' + outdir)
+#time.sleep(15)
+print('rmf file location: ' + quzcif)
+
 
 #recording the filenames of the event directory in an array to be searched in below
 xrt_filelist = os.listdir(outdir)
@@ -199,26 +213,26 @@ xsel_file.write(outdir + '\n')
 
 #adding further things to the .xco file
 xsel_file.write(xrt_evtfile + '\n' + 'yes' + '\n')
-xsel_file.write('filter region ' + regfile + '\nextract spectrum\nsave spectrum sw' + obsid + '_spectrum.pi\nyes\nclear region\n')
+xsel_file.write('filter region ' + regfile + '\nextract spectrum\nsave spectrum sw' + obsid + '_spectrum.pha\nyes\nclear region\n')
 if obmode == 'pc':
 	if pc_backindex == 0:
-		xsel_file.write('filter region ' + backr + '\nextract spectrum\nsave spectrum sw' + obsid + 'back_min_spectrum.pi\nyes\n')
+		xsel_file.write('filter region ' + backr + '\nextract spectrum\nsave spectrum sw' + obsid + 'back_spectrum.pha\nyes\n')
 	elif pc_backindex == 1:	
-		xsel_file.write('clear region\nfilter region ' + backl + '\nextract spectrum\nsave spectrum sw' + obsid + 'back_min_spectrum.pi\nyes\n')
+		xsel_file.write('clear region\nfilter region ' + backl + '\nextract spectrum\nsave spectrum sw' + obsid + 'back_spectrum.pha\nyes\n')
 	elif pc_backindex == 2:	
-		xsel_file.write('clear region\nfilter region ' + backu + '\nextract spectrum\nsave spectrum sw' + obsid + 'back_min_spectrum.pi\nyes\n')
+		xsel_file.write('clear region\nfilter region ' + backu + '\nextract spectrum\nsave spectrum sw' + obsid + 'back_spectrum.pha\nyes\n')
 	elif pc_backindex == 3:
-		xsel_file.write('clear region\nfilter region ' + backd + '\nextract spectrum\nsave spectrum sw' + obsid + 'back_min_spectrum.pi\nyes\n')
+		xsel_file.write('clear region\nfilter region ' + backd + '\nextract spectrum\nsave spectrum sw' + obsid + 'back_spectrum.pha\nyes\n')
 elif obmode == 'wt':
-	xsel_file.write('filter region ' + back + '\nextract spectrum\nsave spectrum sw' + obsid + 'back_annulus_spectrum.pi\nyes\n')
-xsel_file.write('$cd\n')
+	xsel_file.write('filter region ' + back + '\nextract spectrum\nsave spectrum sw' + obsid + 'back_spectrum.pha\nyes\n')
+#xsel_file.write('$cd\n')
 xsel_file.write('no\nquit\nno')
 xsel_file.close()
 
 os.system('xselect @' + xsel_filename)
 
 #changing back to starting working directory
-os.chdir(wd)
+#os.chdir(wd)
 
 #finding the arf file in the screened xrt files
 for arf in xrt_filelist:
@@ -226,18 +240,6 @@ for arf in xrt_filelist:
                 if (re.search('po', arf, re.M|re.I)):
                         arffile = arf
 print('arf file: ' + arffile)
-
-#finding the rmf file in CALDB and copying it to the outdir
-p = subprocess.Popen( "quzcif SWIFT XRT - - matrix NOW - datamode.eq.windowed.and.grade.eq.G0:2.and.XRTVSUB.eq.6", stdout=subprocess.PIPE, shell=True)
-(quzcif_output, err) = p.communicate()
-#p_status = p.wait()
-quzcif = str(quzcif_output)
-quzcif = quzcif.strip("b' 1\n")
-quzcif = quzcif[:-3]
-quzcif = quzcif.strip()
-os.system('cp '+  quzcif + ' ' + outdir)
-time.sleep(15)
-print('rmf file location: ' + quzcif)
 
 #finding the rmf file in the xrt files (was copied here from CALDB)
 for rmf in xrt_filelist:
@@ -247,8 +249,9 @@ print('rmf file: ' + rmffile)
 
 
 #grppha
-grp_out = '!sw' + obsid + '_grp.pi'
-grppha = 'grppha infile= "' + 'sw' + obsid + '_spectrum.pi"' + ' outfile="' + grp_out + '" chatter=0 comm="group min 10 & bad 0-29 & chkey ancrfile ' + arffile + ' & chkey respfile ' + rmffile + ' & exit"'
+grp_out = '!sw' + obsid + '_grp.pha'
+backfile = 'sw' + obsid + 'back_spectrum.pha'
+grppha = "grppha infile= '" + "sw" + obsid + "_spectrum.pha'" + " outfile='" + grp_out + "' chatter=0 comm='group min 10 & bad 0-29 & chkey backfile " + backfile + " chkey ancrfile " + arffile + " & chkey respfile " + rmffile + " & exit'"
 print(grppha)
 os.system(grppha)
 
