@@ -98,7 +98,7 @@ xrt = 'xrtpipeline indir=' + indir + ' steminputs=' + steminputs + ' outdir=' + 
 print('Running pipeline command: ' + xrt)
 
 
-#os.system(xrt)
+os.system(xrt)
 
 #######################################################################     XSELECT      ################################################################################
 
