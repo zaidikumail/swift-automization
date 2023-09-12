@@ -26,6 +26,10 @@ from pathlib import Path
 
 inputTxt = "swift.txt"
 
+# If RA and DEC are set to RA/DEC = "", the pipeline will look for OBJ_RA and OBJ_DEC keywords to find values for RA/DEC by default.
+RA = ""
+DEC = ""
+
 cwd = os.getcwd()
 script_path = os.path.abspath(__file__)
 
@@ -60,6 +64,7 @@ for eachObs in obsdir:
 	#print(obsid_temp)
 	obsid = obsid_temp[::-1]
 	print(obsdir)
+
 	obmode = ""
 	PC = False
 	WT = False
@@ -76,8 +81,19 @@ for eachObs in obsdir:
 				PC = True
 
 		if PC and WT:
-			print("Found both WT and PC mode files. Skipping the current observation...")
-			continue
+			print("Found both WT and PC mode files.")
+			modeInput = input("Please enter 'pc' or 'wt' to choose a mode, or enter anything you want to pass the current observation (pc/wt/other): ")
+			modeInput = modeInput.lower()
+			
+			if modeInput == "pc":
+				print("Chosen observation mode: PC")
+				obmode = "pc"
+			elif modeInput == "wt":
+				print("Chosen observation mode: WT")
+				obmode = "wt"
+			else:
+				print("Skipping to the next observation...")
+				continue
 		elif PC:
 			print("Observation mode: PC")
 			obmode = "pc"
@@ -112,7 +128,17 @@ for eachObs in obsdir:
 	#name of the file where the log of xrtpipeline is recorded
 	xrtlog = 'xrt_' + obsid + '.log'
 
-	xrt = 'xrtpipeline indir=' + indir + ' steminputs=' + steminputs + ' outdir=' + outdir + ' srcra=' + 'OBJECT' + ' srcdec=' + 'OBJECT' + ' createexpomap=yes useexpomap=yes plotdevice="ps" correctlc=yes clobber=yes cleanup=no > ' + xrtlog
+	if RA == "":
+		srcra = "OBJECT"
+	else:
+		srcra = RA
+
+	if DEC == "":
+		srcdec = "OBJECT"
+	else:
+		srcdec = DEC
+
+	xrt = 'xrtpipeline indir=' + indir + ' steminputs=' + steminputs + ' outdir=' + outdir + ' srcra=' + str(srcra) + ' srcdec=' + str(srcdec) + ' createexpomap=yes useexpomap=yes plotdevice="ps" correctlc=yes clobber=yes cleanup=no > ' + xrtlog
 	print('Running pipeline command: ' + xrt)
 
 	#create the outdir directory if it does not already exist

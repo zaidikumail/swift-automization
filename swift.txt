@@ -1,4 +1,3 @@
-/home/batuhanbahceci/SWIFT/data/cygnusx1/00725626000
+/home/batuhanbahceci/SWIFT/data/4u1630/00010910033
 /home/batuhanbahceci/SWIFT/data/4u1630/00010910034
 /home/batuhanbahceci/SWIFT/data/4u1630/00010910035
-/home/batuhanbahceci/SWIFT/data/4u1630/00087453001
