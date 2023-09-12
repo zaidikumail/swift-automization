@@ -22,9 +22,11 @@
 #        K.Zaidi           May, 2018
 
 import subprocess, os, re, time
+from pathlib import Path
 
 inputTxt = "swift.txt"
 
+cwd = os.getcwd()
 script_path = os.path.abspath(__file__)
 
 index = script_path[::-1].find("/")
@@ -104,22 +106,25 @@ for eachObs in obsdir:
 	print('steminputs: ' + steminputs)
 
 	#output directory for screened files coming out of xrtpipeline
-	outdir = obsdir_reduced  + obsid + '-xrt'
+	outdir = cwd + "/"  + obsid + '-xrt'
 	print('outdir: ' + outdir)
-	
+
 	#name of the file where the log of xrtpipeline is recorded
 	xrtlog = 'xrt_' + obsid + '.log'
 
-	xrt = 'xrtpipeline indir=' + indir + ' steminputs=' + steminputs + ' outdir=' + outdir + ' srcra=' + 'OBJECT' + ' srcdec=' + 'OBJECT' + ' createexpomap=yes useexpomap=yes plotdevice="ps" correctlc=yes  clobber=yes cleanup=no > ' + xrtlog
+	xrt = 'xrtpipeline indir=' + indir + ' steminputs=' + steminputs + ' outdir=' + outdir + ' srcra=' + 'OBJECT' + ' srcdec=' + 'OBJECT' + ' createexpomap=yes useexpomap=yes plotdevice="ps" correctlc=yes clobber=yes cleanup=no > ' + xrtlog
 	print('Running pipeline command: ' + xrt)
 
+	#create the outdir directory if it does not already exist
+	if Path(outdir).exists() == False:
+		os.system("mkdir " + outdir)
+
+	#change directory to outdir
+	os.chdir(outdir)
 
 	os.system(xrt)
 
 	#######################################################################     XSELECT      ################################################################################
-
-	#changing to outdir directory for xselect work
-	os.chdir(outdir)
 
 	#(NOT A PART OF XSELECT) finding the rmf file in CALDB and copying it to the outdir
 	p = subprocess.Popen( "quzcif SWIFT XRT - - matrix - - datamode.eq.windowed.and.grade.eq.G0:2.and.XRTVSUB.eq.6", stdout=subprocess.PIPE, shell=True)
@@ -269,5 +274,5 @@ for eachObs in obsdir:
 	grppha = "grppha infile= '" + "sw" + obsid + "_spectrum.pha'" + " outfile='" + grp_out + "' chatter=0 comm='group min 10 & bad 0-29 & chkey backfile " + backfile + " & chkey ancrfile " + arffile + " & chkey respfile " + rmffile + " & exit'"
 	print(grppha)
 	os.system(grppha)
-	quit()
+
 #########################################################################################################################################################################
