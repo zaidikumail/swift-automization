@@ -266,8 +266,8 @@ for eachObs in obsdir:
 	#grppha
 	grp_out = '!sw' + obsid + '_grp.pha'
 	backfile = 'sw' + obsid + 'back_spectrum.pha'
-	grppha = "grppha infile= '" + "sw" + obsid + "_spectrum.pha'" + " outfile='" + grp_out + "' chatter=0 comm='group min 10 & bad 0-29 & chkey backfile " + backfile + " chkey ancrfile " + arffile + " & chkey respfile " + rmffile + " & exit'"
+	grppha = "grppha infile= '" + "sw" + obsid + "_spectrum.pha'" + " outfile='" + grp_out + "' chatter=0 comm='group min 10 & bad 0-29 & chkey backfile " + backfile + " & chkey ancrfile " + arffile + " & chkey respfile " + rmffile + " & exit'"
 	print(grppha)
 	os.system(grppha)
-
+	quit()
 #########################################################################################################################################################################
