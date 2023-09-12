@@ -58,22 +58,34 @@ for eachObs in obsdir:
 	#print(obsid_temp)
 	obsid = obsid_temp[::-1]
 	print(obsdir)
+	obmode = ""
+	PC = False
+	WT = False
 	#determines if an observation was recorded in a PC or a WT mode
 	if (os.path.exists(obsdir)):            
 		event = os.listdir(evtdir)     		#array holds the foldernames in the observation directory
-		try:
-			mode = event[2]                         #mode holds the appropriate foldername in the observation directory to look for observation mode used
-		except:
-			mode = event[0]
-			
-		PC = re.search('pc',mode, re.M|re.I)    #uses re to search for the 'pc' or 'wt' in the appropriate foldername to decide the mode of the observation
-		WT = re.search('wt',mode, re.M|re.I)
-		if PC:
-			print('Current observation mode: PC')
-			obmode = 'pc'
+		
+		for file in event:
+			if "xwtw2po_cl.evt.gz" in file:
+				print('Current observation mode: WT')
+				WT = True
+			elif "xpcw3po_cl.evt.gz" in file:
+				print('Current observation mode: PC')
+				PC = True
+
+		if PC and WT:
+			print("Found both WT and PC mode files. Skipping the current observation...")
+			continue
+		elif PC:
+			print("Observation mode: PC")
+			obmode = "pc"
 		elif WT:
-			print('Current observation mode: WT')
-			obmode = 'wt'
+			print("Observation mode: WT")
+			obmode = "wt"
+		else:
+			print("Neither PC nor WT mode files could be found. Skipping the current observation...")
+			continue
+
 	else:
 		print('Observation not found')
 
