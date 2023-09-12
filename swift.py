@@ -61,7 +61,11 @@ for eachObs in obsdir:
 	#determines if an observation was recorded in a PC or a WT mode
 	if (os.path.exists(obsdir)):            
 		event = os.listdir(evtdir)     		#array holds the foldernames in the observation directory
-		mode = event[2]                         #mode holds the appropriate foldername in the observation directory to look for observation mode used
+		try:
+			mode = event[2]                         #mode holds the appropriate foldername in the observation directory to look for observation mode used
+		except:
+			mode = event[0]
+			
 		PC = re.search('pc',mode, re.M|re.I)    #uses re to search for the 'pc' or 'wt' in the appropriate foldername to decide the mode of the observation
 		WT = re.search('wt',mode, re.M|re.I)
 		if PC:
