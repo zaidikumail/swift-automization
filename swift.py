@@ -22,13 +22,8 @@
 #        K.Zaidi           May, 2018
 
 import subprocess, os, re, time
+from parameter import *
 from pathlib import Path
-
-inputTxt = "swift.txt"
-
-# If RA and DEC are set to RA/DEC = "", the pipeline will look for OBJ_RA and OBJ_DEC keywords to find values for RA/DEC by default.
-RA = ""
-DEC = ""
 
 cwd = os.getcwd()
 script_path = os.path.abspath(__file__)
@@ -302,3 +297,6 @@ for eachObs in obsdir:
 	os.system(grppha)
 
 #########################################################################################################################################################################
+
+if Path(script_path[:script_path.rfind("/")] + "/__pycache__").exists():
+	os.system("rm -rf " + script_path[:script_path.rfind("/")] + "/__pycache__")
