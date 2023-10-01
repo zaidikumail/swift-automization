@@ -24,6 +24,7 @@
 import subprocess, os, re, time
 from parameter import *
 from pathlib import Path
+from astropy.io import fits
 
 cwd = os.getcwd()
 script_path = os.path.abspath(__file__)
@@ -45,6 +46,8 @@ for line in inputFile.readlines():              #loop to record the information 
 inputFile.close()
 
 for eachObs in obsdir:
+	warning_messages = []
+
 	ev = '/xrt/event'
 	obsdir = eachObs
 	evtdir = obsdir + ev
@@ -69,26 +72,35 @@ for eachObs in obsdir:
 		
 		for file in event:
 			if "xwtw2po_cl.evt.gz" in file:
-				print('Current observation mode: WT')
+				print('Found observation mode: WT')
+				photon_file = file
 				WT = True
 			elif "xpcw3po_cl.evt.gz" in file:
-				print('Current observation mode: PC')
+				print('Found observation mode: PC')
+				windowed_file = file
 				PC = True
 
 		if PC and WT:
 			print("Found both WT and PC mode files.")
-			modeInput = input("Please enter 'pc' or 'wt' to choose a mode, or enter anything you want to pass the current observation (pc/wt/other): ")
-			modeInput = modeInput.lower()
+			hdu = fits.open(evtdir + "/" + photon_file)
+			photon_ontime = hdu[0].header["ONTIME"]
+			hdu.close()
 			
-			if modeInput == "pc":
-				print("Chosen observation mode: PC")
-				obmode = "pc"
-			elif modeInput == "wt":
-				print("Chosen observation mode: WT")
+			hdu = fits.open(evtdir + "/" + windowed_file)
+			windowed_ontime = hdu[0].header["ONTIME"]
+			hdu.close()
+
+			if windowed_ontime > photon_ontime:
 				obmode = "wt"
+				print("Current observation mode: WT")
+				warning_messages.append("Warning: WT mode has been automatically selected over PC mode due to bigger ontime.\n")
+				warning_messages.append("WT mode ontime: " + str(windowed_ontime) + " | PC mode ontime: " + str(photon_ontime) + "\n\n")
 			else:
-				print("Skipping to the next observation...")
-				continue
+				obmode = "pc"
+				print("Current observation mode: PC")
+				warning_messages.append("Warning: PC mode has been automatically selected over WT mode due to bigger ontime.\n")
+				warning_messages.append("WT mode ontime: " + str(windowed_ontime) + " | PC mode ontime: " + str(photon_ontime) + "\n\n")
+
 		elif PC:
 			print("Observation mode: PC")
 			obmode = "pc"
@@ -122,6 +134,9 @@ for eachObs in obsdir:
 
 	#name of the file where the log of xrtpipeline is recorded
 	xrtlog = 'xrt_' + obsid + '.log'
+
+	#name of the file where warning messages will be recorded
+	warninglog = "warning_" + obsid + ".log"
 
 	if RA == "":
 		srcra = "OBJECT"
@@ -295,6 +310,15 @@ for eachObs in obsdir:
 	grppha = "grppha infile= '" + "sw" + obsid + "_spectrum.pha'" + " outfile='" + grp_out + "' chatter=0 comm='group min 10 & bad 0-29 & chkey backfile " + backfile + " & chkey ancrfile " + arffile + " & chkey respfile " + rmffile + " & exit'"
 	print(grppha)
 	os.system(grppha)
+
+	#write all warning messages
+	if Path(outdir + "/" + warninglog).exists() == False:
+		os.system("touch " + outdir + "/" + warninglog)
+		
+	warning = open(warninglog, "w")
+	for msg in warning_messages:
+		warning.write(msg)
+	warning.close()
 
 #########################################################################################################################################################################
 
