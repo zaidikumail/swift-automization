@@ -93,12 +93,12 @@ for eachObs in obsdir:
 			if windowed_ontime > photon_ontime:
 				obmode = "wt"
 				print("Current observation mode: WT")
-				warning_messages.append("Warning: WT mode has been automatically selected over PC mode due to bigger ontime.\n")
+				warning_messages.append("Warning: WT mode has been automatically selected over PC mode due to having a larger ontime.\n")
 				warning_messages.append("WT mode ontime: " + str(windowed_ontime) + " | PC mode ontime: " + str(photon_ontime) + "\n\n")
 			else:
 				obmode = "pc"
 				print("Current observation mode: PC")
-				warning_messages.append("Warning: PC mode has been automatically selected over WT mode due to bigger ontime.\n")
+				warning_messages.append("Warning: PC mode has been automatically selected over WT mode due to having a larger ontime.\n")
 				warning_messages.append("WT mode ontime: " + str(windowed_ontime) + " | PC mode ontime: " + str(photon_ontime) + "\n\n")
 
 		elif PC:
@@ -114,6 +114,12 @@ for eachObs in obsdir:
 	else:
 		print('Observation not found')
 
+	#Find the appropriate event file
+	if obmode == "wt":
+		xrt_evtfile = "sw" + obsid + "xwtw2po_cl.evt"
+	else:
+		xrt_evtfile = "sw" + obsid + "xpcw3po_cl.evt"
+	
 	####################################################################     XRTPIPELINE     ################################################################################
 
 	#recording ObsID
@@ -178,11 +184,6 @@ for eachObs in obsdir:
 	#recording the filenames of the event directory in an array to be searched in below
 	xrt_filelist = os.listdir(outdir)
 
-	#finding the appropriate event file
-	for evt in xrt_filelist:
-		if "po_cl.evt" in evt:
-			xrt_evtfile = evt
-			break
 
 	#finding the region file in the screened xrt files
 	for reg in xrt_filelist:
