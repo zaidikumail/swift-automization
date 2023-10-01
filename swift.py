@@ -73,11 +73,11 @@ for eachObs in obsdir:
 		for file in event:
 			if "xwtw2po_cl.evt.gz" in file:
 				print('Found observation mode: WT')
-				photon_file = file
+				windowed_file = file
 				WT = True
 			elif "xpcw3po_cl.evt.gz" in file:
 				print('Found observation mode: PC')
-				windowed_file = file
+				photon_file = file
 				PC = True
 
 		if PC and WT:
