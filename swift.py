@@ -165,11 +165,20 @@ for eachObs in obsdir:
 	os.chdir(outdir)
 
 	os.system(xrt)
-
 	#######################################################################     XSELECT      ################################################################################
+	if obmode == "wt":
+		modeKeyword = "windowed"
+		grade = "G0:2"
+	elif obmode == "pc":
+		modeKeyword = "photon"
+		grade = "G0:12"
+	else:
+		print("Unknown observation mode.\n")
+		continue
 
 	#(NOT A PART OF XSELECT) finding the rmf file in CALDB and copying it to the outdir
-	p = subprocess.Popen( "quzcif SWIFT XRT - - matrix - - datamode.eq.windowed.and.grade.eq.G0:2.and.XRTVSUB.eq.6", stdout=subprocess.PIPE, shell=True)
+	print("Running quzcif to find rmf file.\n")
+	p = subprocess.Popen( "quzcif SWIFT XRT - - matrix - - datamode.eq."+ modeKeyword +".and.grade.eq." + grade +".and.XRTVSUB.eq.6", stdout=subprocess.PIPE, shell=True)
 	(quzcif_output, err) = p.communicate()
 	p_status = p.wait()
 
@@ -179,7 +188,6 @@ for eachObs in obsdir:
 	os.system('cp '+  quzcifFile + ' ' + outdir)
 	#time.sleep(15)
 	print('rmf file location: ' + quzcifFile)
-
 
 	#recording the filenames of the event directory in an array to be searched in below
 	xrt_filelist = os.listdir(outdir)
