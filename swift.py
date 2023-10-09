@@ -198,7 +198,7 @@ for eachObs in obsdir:
 		if ("reg" in reg) and ("po" in reg):
 			regfile = reg
 			break
-
+	
 	#reading the source coordinates from the region file created by the xrtpipeline
 	regfile_cood = open(regfile, 'r')
 	cood = regfile_cood.read()
@@ -312,6 +312,22 @@ for eachObs in obsdir:
 			rmffile = rmf
 	print('rmf file: ' + rmffile)
 
+	# Renew the list variable to to include new files
+	xrt_filelist = os.listdir(outdir)
+
+	# Find necessary files for xrtmkarf
+	for file in xrt_filelist:
+		if "po_ex.img" in file:
+			exposurefile = file
+		elif "sw" + obsid + "_spectrum.pha" == file:
+			spectrumfile = file
+		elif "posr.arf" in file:
+			oldarffile = file
+
+	# Create arf file using xrtmkarf after spectrum file is created
+	# oldarffile variable is just used for naming the output file
+	xrtmkarf = "xrtmkarf outfile=" + oldarffile + " rmffile=" + rmffile + " clobber=yes expofile=" + exposurefile + " phafile=" + spectrumfile + " srcx=-1 srcy=-1 psfflag=yes >> " + xrtlog
+	os.system(xrtmkarf)
 
 	#grppha
 	grp_out = '!sw' + obsid + '_grp.pha'
