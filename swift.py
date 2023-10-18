@@ -147,14 +147,16 @@ for eachObs in obsdir:
 	if RA == "":
 		srcra = "OBJECT"
 	else:
-		srcra = RA
+		RA = str(RA)
+		srcra = "'" + RA + "'"
 
 	if DEC == "":
 		srcdec = "OBJECT"
 	else:
-		srcdec = DEC
+		DEC = str(DEC)
+		srcdec = "'" + DEC + "'"
 
-	xrt = 'xrtpipeline indir=' + indir + ' steminputs=' + steminputs + ' outdir=' + outdir + ' srcra=' + str(srcra) + ' srcdec=' + str(srcdec) + ' createexpomap=yes useexpomap=yes plotdevice="ps" correctlc=yes clobber=yes cleanup=no > ' + xrtlog
+	xrt = "xrtpipeline indir=" + indir + " steminputs=" + steminputs + " outdir=" + outdir + " srcra=" + srcra + " srcdec=" + srcdec + " createexpomap=yes useexpomap=yes plotdevice=ps correctlc=yes clobber=yes cleanup=no > " + xrtlog
 	print('Running pipeline command: ' + xrt)
 
 	#create the outdir directory if it does not already exist
