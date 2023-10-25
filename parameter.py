@@ -2,5 +2,12 @@
 RA = ""
 DEC = ""
 
+# Radius of the circle for the source region
+sourceRadius = 20
+
 # The file that contains observation paths
 inputTxt = "swift.txt"
+
+#Background annulus region for windowed timing mode
+innerRadius = 90
+outerRadius = 110

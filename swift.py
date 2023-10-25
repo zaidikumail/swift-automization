@@ -20,6 +20,7 @@
 #
 # AUTHORS:
 #        K.Zaidi           May, 2018
+#		 B.Bahceci
 
 import subprocess, os, re, time
 from parameter import *
@@ -200,6 +201,31 @@ for eachObs in obsdir:
 		if ("reg" in reg) and ("po" in reg):
 			regfile = reg
 			break
+
+	#Bin the events in cleaned event file into pixels
+	if obmode == "wt":
+		hdu = fits.open("sw" + obsid + "xwtw2po_cl.evt")
+	
+		pixelCounts = {}
+		events = hdu[1].data
+
+		for eachEvent in events:
+			imageX = eachEvent[1]
+			imageY = eachEvent[2]
+
+			coordinate = (imageX, imageY)
+
+			if coordinate in pixelCounts:
+				pixelCounts[coordinate] += 1
+			else:
+				pixelCounts[coordinate] = 1
+		
+		tempMax = 0
+		sourceCoords = (0, 0)
+		for coordinate, count in pixelCounts.items():
+			if count > tempMax:
+				tempMax = count
+				sourceCoords = coordinate
 	
 	#reading the source coordinates from the region file created by the xrtpipeline
 	regfile_cood = open(regfile, 'r')
@@ -212,6 +238,26 @@ for eachObs in obsdir:
 	srcy = cood[1]
 	srcy = float(srcy)
 
+	if obmode == "wt" and (srcra == "OBJECT" or srcdec == "OBJECT"):
+		srcx = sourceCoords[0]
+		srcy = sourceCoords[1]
+
+		with open("sw" + obsid + "xwtw2po.reg", "w") as tempFile:
+			tempFile.write("CIRCLE ("+ str(srcx) +","+ str(srcy) +","+ str(sourceRadius) +")\n")
+	
+	# Determine the pixel count in source/background region for scaling the BACKSCAL values
+	if obmode == "wt":
+		sourcePixels = 0
+		backgroundPixels = 0
+		for xvalue, yvalue in pixelCounts.keys():
+			xDiff = (srcx - xvalue)**2
+			yDiff = (srcy - yvalue)**2
+			trueDistance = abs((xDiff + yDiff)**0.5)
+			if trueDistance < sourceRadius:
+				sourcePixels += 1
+			elif (trueDistance > innerRadius) and (trueDistance < outerRadius):
+				backgroundPixels += 1
+
 	# Region manipulation for PC
 	if obmode == 'pc':
 		srcxr = srcx + 100
@@ -220,19 +266,19 @@ for eachObs in obsdir:
 		srcyd = srcy - 100
 		backr = 'sw' + obsid + 'back_right.reg'
 		back_right = open(backr, 'w')
-		back_right.write('CIRCLE (' + str(srcxr) + ',' + str(srcy) + ',20)')
+		back_right.write('CIRCLE (' + str(srcxr) + ',' + str(srcy) + ','+ str(sourceRadius) +')')
 		back_right.close()
 		backl = 'sw' + obsid + 'back_left.reg'
 		back_left = open(backl, 'w')
-		back_left.write('CIRCLE (' + str(srcxl) + ',' + str(srcy) + ',20)')
+		back_left.write('CIRCLE (' + str(srcxl) + ',' + str(srcy) + ','+ str(sourceRadius) +')')
 		back_left.close()
 		backu = 'sw' + obsid + 'back_up.reg'
 		back_up = open(backu, 'w')
-		back_up.write('CIRCLE (' + str(srcx) + ',' + str(srcyu) + ',20)')
+		back_up.write('CIRCLE (' + str(srcx) + ',' + str(srcyu) + ','+ str(sourceRadius) +')')
 		back_up.close()
 		backd = 'sw' + obsid + 'back_down.reg'
 		back_down = open(backd, 'w')
-		back_down.write('CIRCLE (' + str(srcx) + ',' + str(srcyd) + ',20)')
+		back_down.write('CIRCLE (' + str(srcx) + ',' + str(srcyd) + ','+ str(sourceRadius) + ')')
 		back_down.close()
 		xsel_PC = 'xsel' + obsid + '_PCback.xco'
 		xsel_pcback = open(xsel_PC, 'w')
@@ -266,7 +312,7 @@ for eachObs in obsdir:
 	elif obmode == 'wt':
 		back = 'sw' + obsid + 'back.reg'
 		backfile = open(back, 'w')
-		backfile.write('annulus (' + str(srcx) + ',' + str(srcy) + ',90,110)\n')
+		backfile.write('annulus (' + str(srcx) + ',' + str(srcy) + ','+str(innerRadius)+','+str(outerRadius)+')\n')
 		backfile.close()
 
 	#Writing the .xco file for XSELECT to read the commands from
@@ -297,6 +343,19 @@ for eachObs in obsdir:
 	xsel_file.close()
 
 	os.system('xselect @' + xsel_filename)
+
+	if obmode == "wt":
+		with fits.open("sw"+obsid+"_spectrum.pha", mode='update') as hdu:
+			hdu[1].header["BACKSCAL"] = sourcePixels
+			hdu.flush()
+		
+		with fits.open("sw"+obsid+"xwtw2posr.pha", mode='update') as hdu:
+			hdu[1].header["BACKSCAL"] = sourcePixels
+			hdu.flush()
+		
+		with fits.open("sw"+obsid+"back_spectrum.pha", mode='update') as hdu:
+			hdu[1].header["BACKSCAL"] = backgroundPixels
+			hdu.flush()
 
 	#changing back to starting working directory
 	#os.chdir(wd)
